@@ -6,8 +6,8 @@ import dnnlib
 import dnnlib.tflib as tflib
 import config
 from encoder.generator_model import Generator
-import cv2
 import sys
+from moviepy.editor import *
 
 if __name__ == "__main__":
 
@@ -47,16 +47,14 @@ if __name__ == "__main__":
 
     def move_and_show(latent_vector, direction, coeffs, out_name):
         vid_name = os.path.join(OUTPUT_DIR, out_name.replace('.npy', '.mp4'))
-        fourcc = cv2.VideoWriter_fourcc(*'avc1')
-        video = cv2.VideoWriter(vid_name, fourcc, 30, (1024, 1024))
         gen = {}
         for i, coeff in enumerate(coeffs):
             new_latent_vector = latent_vector.copy()
             new_latent_vector[:8] = (latent_vector + coeff * direction)[:8]
             if coeff not in gen:
                 gen[coeff] = generate_image(new_latent_vector)
-            video.write(gen[coeff][..., ::-1])
-        video.release()
+        video = ImageSequenceClip([gen[coeff] for coeff in coeffs], fps=30)
+        video.write_videofile(vid_name, codec='libx264')
         print('finished '+vid_name)
 
     smile_direction = np.load('ffhq_dataset/latent_directions/smile.npy')
